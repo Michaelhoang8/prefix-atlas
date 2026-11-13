@@ -1,0 +1,176 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Prefix Atlas · Follow the address</title>
+    <link rel="stylesheet" href="/style.css" />
+    <script type="module" src="/app.js"></script>
+  </head>
+  <body>
+    <header>
+      <a class="brand" href="/"><span>⌖</span> PREFIX ATLAS</a
+      ><span class="edition">NETWORK FIELDWORK / IPv4 + IPv6</span
+      ><a href="https://github.com/Michaelhoang8/prefix-atlas">Source ↗</a>
+    </header>
+    <main>
+      <section class="intro">
+        <div>
+          <p class="eyebrow">KNOW WHERE IT GOES.</p>
+          <h1>Follow the address.</h1>
+        </div>
+        <p>Inspect a forwarding decision.<br />Draw a subnet boundary.<br />No probes sent.</p>
+      </section>
+      <div class="tabs" role="tablist" aria-label="Network tools">
+        <button id="lookup-tab" role="tab" aria-selected="true" aria-controls="lookup-panel">
+          01 / Route lookup</button
+        ><button
+          id="subnet-tab"
+          role="tab"
+          aria-selected="false"
+          aria-controls="subnet-panel"
+          tabindex="-1"
+        >
+          02 / Subnet planner
+        </button>
+      </div>
+      <section id="lookup-panel" role="tabpanel" aria-labelledby="lookup-tab">
+        <div class="lookup-grid">
+          <form id="lookup-form">
+            <label for="example">Field example</label
+            ><select id="example" disabled>
+              <option value="office">Office / nested routes</option>
+              <option value="ipv6">IPv6 / campus network</option>
+              <option value="gap">A gap in the table</option></select
+            ><label for="destination">Destination address</label
+            ><input
+              id="destination"
+              value="10.20.30.42"
+              maxlength="64"
+              required
+              autocomplete="off"
+              spellcheck="false"
+            /><label for="routes">Forwarding table</label
+            ><textarea id="routes" rows="9" maxlength="32000" spellcheck="false">
+0.0.0.0/0 upstream 1
+10.0.0.0/8 core 10
+10.20.0.0/16 regional 20
+10.20.30.0/24 office-a 50
+10.20.30.0/24 office-b 20
+10.20.30.42/32 service-host 900</textarea
+            >
+            <p class="help">
+              One route per line: <code>CIDR next-hop-label metric</code>. Use # for comments.
+              Networks must begin at their CIDR boundary.
+            </p>
+            <button class="primary" id="lookup-submit">Find the route <span>→</span></button>
+            <p id="lookup-notice" role="status" aria-live="polite"></p>
+            <details>
+              <summary>Import & export</summary>
+              <label class="file-label"
+                >Import route text<input id="import" type="file" accept=".txt,text/plain"
+              /></label>
+              <div class="actions">
+                <button type="button" id="save-routes">Save table ↓</button
+                ><button type="button" id="save-lookup" disabled>Save analysis ↓</button>
+              </div>
+              <p class="help">
+                The local server computes results. Route text is not saved to disk by the app.
+              </p>
+            </details>
+          </form>
+          <div class="decision">
+            <div class="decision-top">
+              <p class="eyebrow">FORWARDING DECISION</p>
+              <span id="family">—</span>
+            </div>
+            <div class="destination-label" id="destination-label">10.20.30.42</div>
+            <div class="direction" aria-hidden="true">↓</div>
+            <h2 id="winner">Inspect a route.</h2>
+            <p id="winner-prefix"></p>
+            <p id="reason">Run a lookup to see which prefix wins.</p>
+            <div class="bit-section">
+              <p class="eyebrow" id="bit-label">THE ADDRESS, BIT BY BIT</p>
+              <div id="bits" class="bits"></div>
+              <p class="help">Highlighted bits belong to the winning network prefix.</p>
+            </div>
+            <details id="trie-detail">
+              <summary>Follow the prefix-trie search</summary>
+              <div id="checkpoints"></div>
+            </details>
+          </div>
+        </div>
+        <section class="candidates">
+          <div class="section-title">
+            <h2>The matching routes</h2>
+            <span id="match-count">—</span>
+          </div>
+          <p class="help">
+            Longest prefix first, then lowest metric. Exact ties keep input order. This tie-break
+            rule is part of this model; it does not implement a routing protocol.
+          </p>
+          <div class="table-wrap">
+            <table>
+              <caption class="sr-only">
+                Routes matching the destination, ordered by preference
+              </caption>
+              <thead>
+                <tr>
+                  <th>Order</th>
+                  <th>Prefix</th>
+                  <th>Next-hop label</th>
+                  <th>Metric</th>
+                  <th>Result</th>
+                </tr>
+              </thead>
+              <tbody id="matches"></tbody>
+            </table>
+          </div>
+        </section>
+      </section>
+      <section id="subnet-panel" role="tabpanel" aria-labelledby="subnet-tab" hidden>
+        <form id="subnet-form" class="subnet-form">
+          <div>
+            <label for="parent">Parent network</label
+            ><input id="parent" value="192.0.2.0/24" maxlength="100" required spellcheck="false" />
+          </div>
+          <div>
+            <label for="new-prefix">New prefix length</label
+            ><input id="new-prefix" type="number" min="0" max="128" value="26" required />
+          </div>
+          <button class="primary" id="subnet-submit">Divide the network →</button>
+        </form>
+        <p id="subnet-notice" role="status" aria-live="polite"></p>
+        <div id="plan" class="plan"></div>
+        <div class="section-title">
+          <h2>Subnet preview</h2>
+          <button id="save-plan" disabled>Save subnet plan ↓</button>
+        </div>
+        <p class="help" id="subnet-limit">
+          The preview shows at most 64 subnets, even for enormous IPv6 ranges.
+        </p>
+        <div id="subnets" class="subnets"></div>
+      </section>
+      <section class="notes">
+        <h2>A more specific map<br />takes precedence.</h2>
+        <div>
+          <p>
+            Forwarding chooses the longest matching network prefix. A /32 host route can beat a /24
+            route even with a larger metric. Metrics are compared only among equally specific
+            prefixes in this workbench.
+          </p>
+          <p>
+            IPv4 and IPv6 use separate tries. Subnet counts are exact integers, returned as decimal
+            strings to preserve values beyond JavaScript’s safe-number range. Counts describe
+            addresses, not usable hosts; IPv6 has no broadcast address.
+          </p>
+          <a href="https://www.rfc-editor.org/info/rfc4632/">Read the CIDR specification ↗</a>
+        </div>
+      </section>
+    </main>
+    <footer>
+      <span>LOCAL ANALYSIS. PRECISE BOUNDARIES.</span
+      ><span>No DNS lookups · no packet transmission to destinations</span>
+    </footer>
+  </body>
+</html>
