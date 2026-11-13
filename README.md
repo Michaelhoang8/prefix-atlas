@@ -16,6 +16,8 @@ Open http://127.0.0.1:8000. The browser sends bounded analysis requests to the l
 
 ## Route lookup
 
+The lookup page puts the destination and winning route above the prefix bits and ordered matches. Open **Forwarding table** to edit routes, then choose **Apply and look up**. The **Subnet planner** tab keeps address-range planning separate.
+
 Enter one forwarding entry per line:
 
 ```text

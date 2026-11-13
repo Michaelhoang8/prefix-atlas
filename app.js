@@ -13,6 +13,10 @@ const format = (value) => BigInt(value).toLocaleString();
 function notice(id, text, error = false) {
   $(id).textContent = text;
   $(id).className = error ? 'error' : '';
+  if (id === 'lookup-notice') {
+    $('routes-notice').textContent = text;
+    $('routes-notice').className = error ? 'error' : '';
+  }
 }
 async function api(path, body) {
   const response = await fetch(path, {
@@ -206,3 +210,10 @@ api('/api/examples')
   })
   .catch((error) => notice('lookup-notice', error.message, true));
 plan();
+
+$('routes-open').onclick = () => $('routes-panel').showModal();
+$('routes-close').onclick = () => $('routes-panel').close();
+$('routes-apply').onclick = async () => {
+  await lookup();
+  if (lookupReport) $('routes-panel').close();
+};
